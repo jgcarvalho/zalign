@@ -43,6 +43,9 @@ type Data struct {
 	StrideKaksiPross3 string
 	// consensus 4
 	All3 string
+	// hydrophobicity
+	HPRose         string //rose hydrophobicity
+	HPSpecialsRose string //rose hydrophobicity + Gly and Pro (special cases)
 }
 
 func consensus2(ss0, ss1 string) string {
@@ -201,6 +204,42 @@ func pross3(prossss string) string {
 	return pross3
 }
 
+func roseHP(seq string) string {
+	hp := ""
+	for _, v := range seq {
+		switch v {
+		case 'D', 'E', 'H', 'K', 'N', 'Q', 'R', 'S', 'T', 'Y', 'G', 'P':
+			hp += "p"
+		case 'A', 'C', 'L', 'I', 'F', 'W', 'V', 'M':
+			hp += "n"
+		default:
+			fmt.Println("Residue not found", v)
+			return ""
+		}
+	}
+	return hp
+}
+
+func roseHPSpecialPG(seq string) string {
+	hp := ""
+	for _, v := range seq {
+		switch v {
+		case 'D', 'E', 'H', 'K', 'N', 'Q', 'R', 'S', 'T', 'Y':
+			hp += "p"
+		case 'A', 'C', 'L', 'I', 'F', 'W', 'V', 'M':
+			hp += "n"
+		case 'P':
+			hp += "P"
+		case 'G':
+			hp += "G"
+		default:
+			fmt.Println("Residue not found", v)
+			return ""
+		}
+	}
+	return hp
+}
+
 func main() {
 
 	fastaFName := flag.String("fa", "", "fasta file")
@@ -335,6 +374,8 @@ func main() {
 		DsspKaksiPross3:   consensus3(dssp3(dsspss), kaksi3(kaksiss), pross3(prossss)),
 		StrideKaksiPross3: consensus3(stride3(stridess), kaksi3(kaksiss), pross3(prossss)),
 		All3:              consensus4(dssp3(dsspss), stride3(stridess), kaksi3(kaksiss), pross3(prossss)),
+		HPRose:            roseHP(aa),
+		HPSpecialsRose:    roseHPSpecialPG(aa),
 	}
 	b, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
