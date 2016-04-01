@@ -16,38 +16,6 @@ import (
 	"github.com/biogo/biogo/seq/linear"
 )
 
-type Data struct {
-	ID string
-	//original
-	Seq    string
-	Dssp   string
-	Stride string
-	Kaksi  string
-	Pross  string
-	//processed
-	Dssp3   string
-	Stride3 string
-	Kaksi3  string
-	Pross3  string
-	// consensus 2
-	DsspStride3  string
-	DsspKaksi3   string
-	DsspPross3   string
-	StrideKaksi3 string
-	StridePross3 string
-	KaksiPross3  string
-	// consensus 3
-	DsspStrideKaksi3  string
-	DsspStridePross3  string
-	DsspKaksiPross3   string
-	StrideKaksiPross3 string
-	// consensus 4
-	All3 string
-	// hydrophobicity
-	HPRose         string //rose hydrophobicity
-	HPSpecialsRose string //rose hydrophobicity + Gly and Pro (special cases)
-}
-
 func consensus2(ss0, ss1 string) string {
 	cons := ""
 	for i := 0; i < len(ss0); i++ {
@@ -123,8 +91,8 @@ func alinha(seq_aa, ss_aa, ss_ss seq.Sequence) (string, string, string) {
 	aln, err := nw.Align(seq_aa, ss_aa)
 	var f_aa, f_ss [2]alphabet.Slice
 	if err == nil {
-		f_aa = align.Format(seq_aa, ss_aa, aln, '_')
-		f_ss = align.Format(seq_aa, ss_ss, aln, '_')
+		f_aa = align.Format(seq_aa, ss_aa, aln, '.')
+		f_ss = align.Format(seq_aa, ss_ss, aln, '.')
 	} else {
 		fmt.Println("O ERRO E:", err)
 	}
@@ -146,13 +114,13 @@ func dssp3(dsspss string) string {
 		case 'I':
 			dssp3 += "*"
 		case 'C':
-			dssp3 += "-"
+			dssp3 += "_"
 		case 'B':
-			dssp3 += "-"
+			dssp3 += "_"
 		case 'T':
-			dssp3 += "-"
+			dssp3 += "_"
 		case 'S':
-			dssp3 += "-"
+			dssp3 += "_"
 		default:
 			dssp3 += "?"
 		}
@@ -173,7 +141,7 @@ func kaksi3(kaksiss string) string {
 		case 'H':
 			kaksi3 += "*"
 		case '.':
-			kaksi3 += "-"
+			kaksi3 += "_"
 		default:
 			kaksi3 += "?"
 		}
@@ -192,11 +160,11 @@ func pross3(prossss string) string {
 		case 'H':
 			pross3 += "*"
 		case 'T':
-			pross3 += "-"
+			pross3 += "_"
 		case 'C':
-			pross3 += "-"
+			pross3 += "_"
 		case 'P':
-			pross3 += "-"
+			pross3 += "_"
 		default:
 			pross3 += "?"
 		}
@@ -204,41 +172,73 @@ func pross3(prossss string) string {
 	return pross3
 }
 
-func roseHP(seq string) string {
-	hp := ""
-	for _, v := range seq {
-		switch v {
-		case 'D', 'E', 'H', 'K', 'N', 'Q', 'R', 'S', 'T', 'Y', 'G', 'P':
-			hp += "p"
-		case 'A', 'C', 'L', 'I', 'F', 'W', 'V', 'M':
-			hp += "n"
-		default:
-			fmt.Println("Residue not found", v)
-			return ""
+func hydro(seq, scale string) string {
+	var hp string
+	if scale == "rose" {
+		for _, v := range seq {
+			hp += rose[string(v)]
 		}
 	}
+
+	if scale == "roseSpecial" {
+		for _, v := range seq {
+			hp += roseSpecial[string(v)]
+		}
+	}
+
+	if scale == "roseSpecialCharged" {
+		for _, v := range seq {
+			hp += roseSpecialCharged[string(v)]
+		}
+	}
+
 	return hp
 }
 
-func roseHPSpecialPG(seq string) string {
-	hp := ""
-	for _, v := range seq {
-		switch v {
-		case 'D', 'E', 'H', 'K', 'N', 'Q', 'R', 'S', 'T', 'Y':
-			hp += "p"
-		case 'A', 'C', 'L', 'I', 'F', 'W', 'V', 'M':
-			hp += "n"
-		case 'P':
-			hp += "P"
-		case 'G':
-			hp += "G"
-		default:
-			fmt.Println("Residue not found", v)
-			return ""
-		}
+func combine(seq, hp string) []string {
+	cb := make([]string, len(seq))
+	for i := 0; i < len(cb); i++ {
+		cb[i] = string(seq[i]) + string(hp[i])
 	}
-	return hp
+	return cb
+
 }
+
+// func roseHP(seq string) string {
+// 	hp := ""
+// 	for _, v := range seq {
+// 		switch v {
+// 		case 'D', 'E', 'H', 'K', 'N', 'Q', 'R', 'S', 'T', 'Y', 'G', 'P':
+// 			hp += "p"
+// 		case 'A', 'C', 'L', 'I', 'F', 'W', 'V', 'M':
+// 			hp += "n"
+// 		default:
+// 			fmt.Println("Residue not found", v)
+// 			return ""
+// 		}
+// 	}
+// 	return hp
+// }
+//
+// func roseHPSpecialPG(seq string) string {
+// 	hp := ""
+// 	for _, v := range seq {
+// 		switch v {
+// 		case 'D', 'E', 'H', 'K', 'N', 'Q', 'R', 'S', 'T', 'Y':
+// 			hp += "p"
+// 		case 'A', 'C', 'L', 'I', 'F', 'W', 'V', 'M':
+// 			hp += "n"
+// 		case 'P':
+// 			hp += "P"
+// 		case 'G':
+// 			hp += "G"
+// 		default:
+// 			fmt.Println("Residue not found", v)
+// 			return ""
+// 		}
+// 	}
+// 	return hp
+// }
 
 func main() {
 
@@ -352,30 +352,97 @@ func main() {
 	id = strings.TrimSuffix(id, ".fa")
 	id = strings.TrimSuffix(id, ".fasta")
 
+	hpRose := hydro(aa, "rose")
+	hpRoseSpecial := hydro(aa, "roseSpecial")
+	hpRoseSpecialCharged := hydro(aa, "roseSpecialCharged")
+
 	data := Data{
 		ID:                id,
-		Seq:               aa,
-		Dssp:              dsspss,
-		Stride:            stridess,
-		Kaksi:             kaksiss,
-		Pross:             prossss,
-		Dssp3:             dssp3(dsspss),
-		Stride3:           stride3(stridess),
-		Kaksi3:            kaksi3(kaksiss),
-		Pross3:            pross3(prossss),
-		DsspStride3:       consensus2(dssp3(dsspss), stride3(stridess)),
-		DsspKaksi3:        consensus2(dssp3(dsspss), kaksi3(kaksiss)),
-		DsspPross3:        consensus2(dssp3(dsspss), pross3(prossss)),
-		StrideKaksi3:      consensus2(stride3(stridess), kaksi3(kaksiss)),
-		StridePross3:      consensus2(stride3(stridess), pross3(prossss)),
-		KaksiPross3:       consensus2(kaksi3(kaksiss), pross3(prossss)),
-		DsspStrideKaksi3:  consensus3(dssp3(dsspss), stride3(stridess), kaksi3(kaksiss)),
-		DsspStridePross3:  consensus3(dssp3(dsspss), stride3(stridess), pross3(prossss)),
-		DsspKaksiPross3:   consensus3(dssp3(dsspss), kaksi3(kaksiss), pross3(prossss)),
-		StrideKaksiPross3: consensus3(stride3(stridess), kaksi3(kaksiss), pross3(prossss)),
-		All3:              consensus4(dssp3(dsspss), stride3(stridess), kaksi3(kaksiss), pross3(prossss)),
-		HPRose:            roseHP(aa),
-		HPSpecialsRose:    roseHPSpecialPG(aa),
+		Seq:               strings.Split(aa, ""),
+		Dssp:              strings.Split(dsspss, ""),
+		Stride:            strings.Split(stridess, ""),
+		Kaksi:             strings.Split(kaksiss, ""),
+		Pross:             strings.Split(prossss, ""),
+		Dssp3:             strings.Split(dssp3(dsspss), ""),
+		Stride3:           strings.Split(stride3(stridess), ""),
+		Kaksi3:            strings.Split(kaksi3(kaksiss), ""),
+		Pross3:            strings.Split(pross3(prossss), ""),
+		DsspStride3:       strings.Split(consensus2(dssp3(dsspss), stride3(stridess)), ""),
+		DsspKaksi3:        strings.Split(consensus2(dssp3(dsspss), kaksi3(kaksiss)), ""),
+		DsspPross3:        strings.Split(consensus2(dssp3(dsspss), pross3(prossss)), ""),
+		StrideKaksi3:      strings.Split(consensus2(stride3(stridess), kaksi3(kaksiss)), ""),
+		StridePross3:      strings.Split(consensus2(stride3(stridess), pross3(prossss)), ""),
+		KaksiPross3:       strings.Split(consensus2(kaksi3(kaksiss), pross3(prossss)), ""),
+		DsspStrideKaksi3:  strings.Split(consensus3(dssp3(dsspss), stride3(stridess), kaksi3(kaksiss)), ""),
+		DsspStridePross3:  strings.Split(consensus3(dssp3(dsspss), stride3(stridess), pross3(prossss)), ""),
+		DsspKaksiPross3:   strings.Split(consensus3(dssp3(dsspss), kaksi3(kaksiss), pross3(prossss)), ""),
+		StrideKaksiPross3: strings.Split(consensus3(stride3(stridess), kaksi3(kaksiss), pross3(prossss)), ""),
+		All3:              strings.Split(consensus4(dssp3(dsspss), stride3(stridess), kaksi3(kaksiss), pross3(prossss)), ""),
+		//rose hydrophobicity
+		SeqHPRose:               combine(aa, hpRose),
+		DsspHPRose:              combine(dsspss, hpRose),
+		StrideHPRose:            combine(stridess, hpRose),
+		KaksiHPRose:             combine(kaksiss, hpRose),
+		ProssHPRose:             combine(prossss, hpRose),
+		Dssp3HPRose:             combine(dssp3(dsspss), hpRose),
+		Stride3HPRose:           combine(stride3(stridess), hpRose),
+		Kaksi3HPRose:            combine(kaksi3(kaksiss), hpRose),
+		Pross3HPRose:            combine(pross3(prossss), hpRose),
+		DsspStride3HPRose:       combine(consensus2(dssp3(dsspss), stride3(stridess)), hpRose),
+		DsspKaksi3HPRose:        combine(consensus2(dssp3(dsspss), kaksi3(kaksiss)), hpRose),
+		DsspPross3HPRose:        combine(consensus2(dssp3(dsspss), pross3(prossss)), hpRose),
+		StrideKaksi3HPRose:      combine(consensus2(stride3(stridess), kaksi3(kaksiss)), hpRose),
+		StridePross3HPRose:      combine(consensus2(stride3(stridess), pross3(prossss)), hpRose),
+		KaksiPross3HPRose:       combine(consensus2(kaksi3(kaksiss), pross3(prossss)), hpRose),
+		DsspStrideKaksi3HPRose:  combine(consensus3(dssp3(dsspss), stride3(stridess), kaksi3(kaksiss)), hpRose),
+		DsspStridePross3HPRose:  combine(consensus3(dssp3(dsspss), stride3(stridess), pross3(prossss)), hpRose),
+		DsspKaksiPross3HPRose:   combine(consensus3(dssp3(dsspss), kaksi3(kaksiss), pross3(prossss)), hpRose),
+		StrideKaksiPross3HPRose: combine(consensus3(stride3(stridess), kaksi3(kaksiss), pross3(prossss)), hpRose),
+		All3HPRose:              combine(consensus4(dssp3(dsspss), stride3(stridess), kaksi3(kaksiss), pross3(prossss)), hpRose),
+
+		//rose hydrophobicity
+		SeqHPRoseSpecial:               combine(aa, hpRoseSpecial),
+		DsspHPRoseSpecial:              combine(dsspss, hpRoseSpecial),
+		StrideHPRoseSpecial:            combine(stridess, hpRoseSpecial),
+		KaksiHPRoseSpecial:             combine(kaksiss, hpRoseSpecial),
+		ProssHPRoseSpecial:             combine(prossss, hpRoseSpecial),
+		Dssp3HPRoseSpecial:             combine(dssp3(dsspss), hpRoseSpecial),
+		Stride3HPRoseSpecial:           combine(stride3(stridess), hpRoseSpecial),
+		Kaksi3HPRoseSpecial:            combine(kaksi3(kaksiss), hpRoseSpecial),
+		Pross3HPRoseSpecial:            combine(pross3(prossss), hpRoseSpecial),
+		DsspStride3HPRoseSpecial:       combine(consensus2(dssp3(dsspss), stride3(stridess)), hpRoseSpecial),
+		DsspKaksi3HPRoseSpecial:        combine(consensus2(dssp3(dsspss), kaksi3(kaksiss)), hpRoseSpecial),
+		DsspPross3HPRoseSpecial:        combine(consensus2(dssp3(dsspss), pross3(prossss)), hpRoseSpecial),
+		StrideKaksi3HPRoseSpecial:      combine(consensus2(stride3(stridess), kaksi3(kaksiss)), hpRoseSpecial),
+		StridePross3HPRoseSpecial:      combine(consensus2(stride3(stridess), pross3(prossss)), hpRoseSpecial),
+		KaksiPross3HPRoseSpecial:       combine(consensus2(kaksi3(kaksiss), pross3(prossss)), hpRoseSpecial),
+		DsspStrideKaksi3HPRoseSpecial:  combine(consensus3(dssp3(dsspss), stride3(stridess), kaksi3(kaksiss)), hpRoseSpecial),
+		DsspStridePross3HPRoseSpecial:  combine(consensus3(dssp3(dsspss), stride3(stridess), pross3(prossss)), hpRoseSpecial),
+		DsspKaksiPross3HPRoseSpecial:   combine(consensus3(dssp3(dsspss), kaksi3(kaksiss), pross3(prossss)), hpRoseSpecial),
+		StrideKaksiPross3HPRoseSpecial: combine(consensus3(stride3(stridess), kaksi3(kaksiss), pross3(prossss)), hpRoseSpecial),
+		All3HPRoseSpecial:              combine(consensus4(dssp3(dsspss), stride3(stridess), kaksi3(kaksiss), pross3(prossss)), hpRoseSpecial),
+
+		//rose hydrophobicity
+		SeqHPRoseSpecialCharged:               combine(aa, hpRoseSpecialCharged),
+		DsspHPRoseSpecialCharged:              combine(dsspss, hpRoseSpecialCharged),
+		StrideHPRoseSpecialCharged:            combine(stridess, hpRoseSpecialCharged),
+		KaksiHPRoseSpecialCharged:             combine(kaksiss, hpRoseSpecialCharged),
+		ProssHPRoseSpecialCharged:             combine(prossss, hpRoseSpecialCharged),
+		Dssp3HPRoseSpecialCharged:             combine(dssp3(dsspss), hpRoseSpecialCharged),
+		Stride3HPRoseSpecialCharged:           combine(stride3(stridess), hpRoseSpecialCharged),
+		Kaksi3HPRoseSpecialCharged:            combine(kaksi3(kaksiss), hpRoseSpecialCharged),
+		Pross3HPRoseSpecialCharged:            combine(pross3(prossss), hpRoseSpecialCharged),
+		DsspStride3HPRoseSpecialCharged:       combine(consensus2(dssp3(dsspss), stride3(stridess)), hpRoseSpecialCharged),
+		DsspKaksi3HPRoseSpecialCharged:        combine(consensus2(dssp3(dsspss), kaksi3(kaksiss)), hpRoseSpecialCharged),
+		DsspPross3HPRoseSpecialCharged:        combine(consensus2(dssp3(dsspss), pross3(prossss)), hpRoseSpecialCharged),
+		StrideKaksi3HPRoseSpecialCharged:      combine(consensus2(stride3(stridess), kaksi3(kaksiss)), hpRoseSpecialCharged),
+		StridePross3HPRoseSpecialCharged:      combine(consensus2(stride3(stridess), pross3(prossss)), hpRoseSpecialCharged),
+		KaksiPross3HPRoseSpecialCharged:       combine(consensus2(kaksi3(kaksiss), pross3(prossss)), hpRoseSpecialCharged),
+		DsspStrideKaksi3HPRoseSpecialCharged:  combine(consensus3(dssp3(dsspss), stride3(stridess), kaksi3(kaksiss)), hpRoseSpecialCharged),
+		DsspStridePross3HPRoseSpecialCharged:  combine(consensus3(dssp3(dsspss), stride3(stridess), pross3(prossss)), hpRoseSpecialCharged),
+		DsspKaksiPross3HPRoseSpecialCharged:   combine(consensus3(dssp3(dsspss), kaksi3(kaksiss), pross3(prossss)), hpRoseSpecialCharged),
+		StrideKaksiPross3HPRoseSpecialCharged: combine(consensus3(stride3(stridess), kaksi3(kaksiss), pross3(prossss)), hpRoseSpecialCharged),
+		All3HPRoseSpecialCharged:              combine(consensus4(dssp3(dsspss), stride3(stridess), kaksi3(kaksiss), pross3(prossss)), hpRoseSpecialCharged),
 	}
 	b, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
